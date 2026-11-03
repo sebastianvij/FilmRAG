@@ -1,0 +1,100 @@
+{
+  "name": "FilmRAG - Graph Query",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "movie_title"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7c28aa23-9137-45d1-865c-b4fe8974eba8",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://77e723ec.databases.neo4j.io/db/77e723ec/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    statement: \"MATCH (m:Movie) WHERE m.title = $movie_title OPTIONAL MATCH (m)-[:SIMILAR_THEME_TO]-(related:Movie) WITH m, collect(DISTINCT {title: related.title, year: related.year}) AS similarMovies OPTIONAL MATCH (m)-[:HAS_GENRE]-(g:Genre)-[:HAS_GENRE]-(genreMovie:Movie) WHERE genreMovie <> m RETURN m.title AS searchedMovie, similarMovies, collect(DISTINCT {title: genreMovie.title, year: genreMovie.year, genre: g.name}) AS moviesWithSharedGenres\",\n    parameters: {\n      movie_title: $json.movie_title\n    }\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d4b429c9-b0fb-4724-b6be-e93c57711c0d",
+      "name": "Neo4j – Graph Query",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "bBJOCW0t9ChZ7qQa",
+          "name": "Neo4j"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json.data;\n\nconst fields = result.fields;\nconst values = result.values;\n\nif (!values || values.length === 0) {\n  return [{\n    json: {\n      graphResults: \"Ingen filmrelationer blev fundet.\"\n    }\n  }];\n}\n\nconst row = Object.fromEntries(\n  fields.map((field, index) => [field, values[0][index]])\n);\n\nconst similarMovies = row.similarMovies || [];\nconst sharedGenres = row.moviesWithSharedGenres || [];\n\nconst similarText = similarMovies\n  .map(movie => `${movie.title} (${movie.year})`)\n  .join(\", \");\n\nconst genreText = sharedGenres\n  .map(movie => `${movie.title} (${movie.year}) – ${movie.genre}`)\n  .join(\"\\n\");\n\nconst graphResults = `\nSøgt film: ${row.searchedMovie}\n\nFilm med lignende temaer:\n${similarText || \"Ingen fundet\"}\n\nFilm med fælles genrer:\n${genreText || \"Ingen fundet\"}\n`;\n\nreturn [{\n  json: {\n    graphResults\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "6014f94c-ff90-48fb-a026-02c22984b9a2",
+      "name": "Format Graph Results"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Neo4j – Graph Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j – Graph Query": {
+      "main": [
+        [
+          {
+            "node": "Format Graph Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e4cbdac6-e4f2-43f1-ba21-a4b04b644be4",
+  "meta": {
+    "instanceId": "3a84bd6eba18baefa5ae98d326e2e9cca36d10a8f4ab24604a8e34f0487fae38"
+  },
+  "nodeGroups": [],
+  "id": "GnoM4knuehHvWQBs",
+  "tags": []
+}
