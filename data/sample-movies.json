@@ -1,0 +1,60 @@
+[
+  {
+    "title": "The Matrix",
+    "year": 1999,
+    "description": "A computer hacker discovers that reality is a simulation controlled by intelligent machines.",
+    "genres": [
+      "Science Fiction"
+    ],
+    "similar_theme_to": [
+      "Inception",
+      "Blade Runner 2049"
+    ]
+  },
+  {
+    "title": "Inception",
+    "year": 2010,
+    "description": "A thief enters people's dreams to steal secrets and plant an idea.",
+    "genres": [
+      "Science Fiction",
+      "Thriller"
+    ],
+    "similar_theme_to": [
+      "The Matrix",
+      "Interstellar"
+    ]
+  },
+  {
+    "title": "Interstellar",
+    "year": 2014,
+    "description": "A team of explorers travels through a wormhole to find a new home for humanity. The story explores time, gravity and survival.",
+    "genres": [
+      "Science Fiction"
+    ],
+    "similar_theme_to": [
+      "Inception"
+    ]
+  },
+  {
+    "title": "Blade Runner 2049",
+    "year": 2017,
+    "description": "A detective uncovers a secret about artificial beings in a dystopian future.",
+    "genres": [
+      "Science Fiction",
+      "Thriller"
+    ],
+    "similar_theme_to": [
+      "The Matrix"
+    ]
+  },
+  {
+    "title": "The Dark Knight",
+    "year": 2008,
+    "description": "A masked hero fights crime and faces a chaotic villain who challenges justice and morality.",
+    "genres": [
+      "Thriller",
+      "Action"
+    ],
+    "similar_theme_to": []
+  }
+]
