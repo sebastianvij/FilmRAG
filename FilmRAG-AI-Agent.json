@@ -1,0 +1,198 @@
+{
+  "name": "FilmRAG - AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "413a5817-4c39-4702-996e-f2cc4b70f2ec",
+      "name": "When chat message received",
+      "webhookId": "cf6e4d15-8230-4488-8f34-e55a51aac410"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Du er FilmRAG, en dansk filmanbefalingsassistent.\n\nDu har adgang til to værktøjer:\n\n1. Semantic Search:\nBruges til at finde film, der matcher brugerens spørgsmål ud fra filmenes beskrivelser og betydning.\n\n2. Graph Query:\nBruges til at undersøge relationer mellem film gennem lignende temaer og fælles genrer.\n\nVIGTIGT – brug af værktøjer:\n- Du SKAL bruge Semantic Search, når brugeren spørger efter film ud fra et emne eller en beskrivelse.\n- Du SKAL bruge Graph Query, når brugeren spørger om relationer mellem film.\n- Når brugeren beder om filmanbefalinger og relationer, skal du bruge BEGGE værktøjer.\n- Når du bruger Graph Query, skal du sende titlen på en film, som Semantic Search har fundet, til værktøjet.\n- Du må ikke opfinde film, genrer eller relationer.\n\nSvar altid på dansk.\nBrug kun information fra værktøjerne og filmdatabasen.\nForklar kort, hvorfor du anbefaler en film.\nHvis databasen ikke indeholder relevante film, skal du sige det ærligt."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        192,
+        0
+      ],
+      "id": "7d675419-89a5-482a-80eb-a6f7374ab8f3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        64,
+        208
+      ],
+      "id": "ddd03090-1d7c-4e92-921d-123fc1b43244",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "eeEN2Pl6YPzI0iRo",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "hNhbHpS93j6AEpkL",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/hNhbHpS93j6AEpkL",
+          "cachedResultName": "FilmRAG - Semantic Search"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $fromAI('question', 'Brugerens spørgsmål om film', 'string') }}"
+          },
+          "matchingColumns": [
+            "question"
+          ],
+          "schema": [
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        496,
+        192
+      ],
+      "id": "0444d1f7-8103-482b-ba0a-403f80fbad74",
+      "name": "Call 'FilmRAG - Semantic Search'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "GnoM4knuehHvWQBs",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/GnoM4knuehHvWQBs",
+          "cachedResultName": "FilmRAG - Graph Query"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "movie_title": "={{ $fromAI('movie_title', 'Titlen på den film, der skal findes relationer til', 'string') }}"
+          },
+          "matchingColumns": [
+            "movie_title"
+          ],
+          "schema": [
+            {
+              "id": "movie_title",
+              "displayName": "movie_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        304
+      ],
+      "id": "65bc6d1e-cbe6-4d6b-bf3e-7e6e977a5cc3",
+      "name": "Call 'FilmRAG - Graph Query'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'FilmRAG - Semantic Search'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'FilmRAG - Graph Query'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7e5637f4-6474-49bd-b92d-99c0384cd954",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3a84bd6eba18baefa5ae98d326e2e9cca36d10a8f4ab24604a8e34f0487fae38"
+  },
+  "nodeGroups": [],
+  "id": "ICx2t43I3msnk1es",
+  "tags": []
+}

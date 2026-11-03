@@ -1,0 +1,203 @@
+{
+  "name": "FilmRAG - Graph Search",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -80
+      ],
+      "id": "4ce56f4b-b72c-49b8-ad70-9acf2caa8e3e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://77e723ec.databases.neo4j.io/db/77e723ec/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"statement\": \"MATCH (m:Movie) RETURN m.title AS title, m.description AS description, m.year AS year ORDER BY title\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -288,
+        -64
+      ],
+      "id": "1c7cc2f6-a1c6-4a4d-945f-e64c30352435",
+      "name": "Neo4j",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "bBJOCW0t9ChZ7qQa",
+          "name": "Neo4j"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"nomic-embed-text\",\n  \"input\": \"{{ $json.description }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        96,
+        16
+      ],
+      "id": "e59b2a4c-4fa4-4c26-b2fa-17d375d63c8b",
+      "name": "Generate Movie Embedding",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        -80
+      ],
+      "id": "74b0f6e0-0b53-4a96-9ad3-8a709a98bb87",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $json.data.values;\n\nreturn rows.map(row => ({\n  json: {\n    title: row[0],\n    description: row[1],\n    year: row[2]\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -96
+      ],
+      "id": "f1d018f5-5d93-4726-9fe0-350bb9dfd099",
+      "name": "Code - Split Movies"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://77e723ec.databases.neo4j.io/db/77e723ec/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"statement\": \"MATCH (m:Movie {title: $title}) SET m.embedding = $embedding RETURN m.title AS title\",\n  \"parameters\": {\n    \"title\": \"{{ $json.title }}\",\n    \"embedding\": {{ JSON.stringify($json.embeddings[0]) }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        608,
+        -80
+      ],
+      "id": "9e1c8fde-5964-49c2-ae31-c1b8b7817ade",
+      "name": "Save Movie Embedding",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "bBJOCW0t9ChZ7qQa",
+          "name": "Neo4j"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Code - Split Movies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Movie Embedding": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Save Movie Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Split Movies": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Movie Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7c272f5f-e078-4aaa-9e51-00d09b905c9d",
+  "meta": {
+    "instanceId": "3a84bd6eba18baefa5ae98d326e2e9cca36d10a8f4ab24604a8e34f0487fae38"
+  },
+  "nodeGroups": [],
+  "id": "5fJmhjmGGoLffkn6",
+  "tags": []
+}
